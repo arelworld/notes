@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rage Ninja - Slice Your Frustrations</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a1a;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            z-index: 10;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid #ff4757;
+            box-shadow: 0 0 15px rgba(255, 71, 87, 0.5);
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            color: #ff4757;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-upload {
+            background: #ff4757;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            display: inline-block;
+        }
+
+        .btn-upload:hover {
+            background: #ff6b81;
+            transform: scale(1.05);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        #score-board {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        canvas {
+            display: block;
+            background: #0a0a0a;
+            cursor: crosshair;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            color: #888;
+            font-size: 14px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <h1>Rage Ninja</h1>
+        <label class="btn-upload">
+            Upload Target Photo
+            <input type="file" id="imageLoader" accept="image/*">
+        </label>
+        <div id="score-board">Slices: <span id="score">0</span></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="instructions">Click and drag your mouse/finger to slice!</div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const imageLoader = document.getElementById('imageLoader');
+        const scoreDisplay = document.getElementById('score');
+
+        // Resize canvas to fill window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game State
+        let score = 0;
+        let targets = [];
+        let particles = [];
+        let sliceTracks = [];
+        let isMouseDown = false;
+        let targetImg = null;
+
+        // Default Target (a red angry square if no image is uploaded)
+        const createDefaultTarget = () => {
+            const canvasDummy = document.createElement('canvas');
+            canvasDummy.width = 100;
+            canvasDummy.height = 100;
+            const dCtx = canvasDummy.getContext('2d');
+            dCtx.fillStyle = '#ff4757';
+            dCtx.fillRect(0, 0, 100, 100);
+            dCtx.fillStyle = '#ffffff';
+            dCtx.font = 'bold 16px Arial';
+            dCtx.fillText('RAGE', 25, 55);
+            const img = new Image();
+            img.src = canvasDummy.toDataURL();
+            return img;
+        };
+
+        targetImg = createDefaultTarget();
+
+        // Handle Image Upload
+        imageLoader.addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    targetImg = img;
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        // Target Class (The flying objects)
+        class Target {
+            constructor() {
+                this.size = 120; 
+                this.x = Math.random() * (canvas.width - this.size) + this.size/2;
+                this.y = canvas.height + this.size;
+                
+                // Physics
+                this.vx = (Math.random() - 0.5) * 8; // Side-to-side speed
+                this.vy = -(Math.random() * 5 + 14); // Jump strength
+                this.gravity = 0.3;
+                
+                // Rotation
+                this.angle = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+                
+                this.isSliced = false;
+            }
+
+            update() {
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.angle += this.rotationSpeed;
+            }
+
+            draw() {
+                if (this.isSliced) return;
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle);
+                
+                // Draw clipped image in a circle or square
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                
+                // Draw the user image
+                ctx.drawImage(targetImg, -this.size / 2, -this.size / 2, this.size, this.size);
+                
+                // Add a red angry border
+                ctx.strokeStyle = '#ff4757';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                
+                ctx.restore();
+            }
+        }
+
+        // Particle Class for Juicy Explosions
+        class Particle {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 20 + 10;
+                this.vx = vx + (Math.random() - 0.5) * 10;
+                this.vy = vy + (Math.random() - 0.5) * 10;
+                this.gravity = 0.4;
+                this.alpha = 1;
+                this.rotation = Math.random() * Math.PI;
+            }
+
+            update() {
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.02;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                // Render pieces of the image as fragments
+                ctx.drawImage(targetImg, -this.size/2, -this.size/2, this.size, this.size);
+                
+                // Overlay red tint
+                ctx.fillStyle = 'rgba(255, 71, 87, 0.3)';
+                ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                
+                ctx.restore();
+            }
+        }
+
+        // Spawn Mechanics
+        function spawnTarget() {
+            if (targets.length < 4) { // Limits max active targets on screen
+                targets.push(new Target());
+            }
+            // Dynamic random spawning
+            setTimeout(spawnTarget, Math.random() * 1500 + 500);
+        }
+        spawnTarget();
+
+        // Line Intersection formula to check if slice cuts through target
+        function checkIntersection(p1, p2, target) {
+            const distance = Math.abs((p2.y - p1.y) * target.x - (p2.x - p1.x) * target.y + p2.x * p1.y - p2.y * p1.x) / 
+                             Math.sqrt(Math.pow(p2.y - p1.y, 2) + Math.pow(p2.x - p1.x, 2));
+            
+            // Check if the line is close enough to target center and if mouse swipe spans across it
+            const minX = Math.min(p1.x, p2.x) - 20;
+            const maxX = Math.max(p1.x, p2.x) + 20;
+            const minY = Math.min(p1.y, p2.y) - 20;
+            const maxY = Math.max(p1.y, p2.y) + 20;
+
+            return distance < (target.size / 2) && 
+                   target.x >= minX && target.x <= maxX && 
+                   target.y >= minY && target.y <= maxY;
+        }
+
+        // Process slicing action
+        function handleSlice(p1, p2) {
+            targets.forEach(target => {
+                if (!target.isSliced && checkIntersection(p1, p2, target)) {
+                    target.isSliced = true;
+                    score++;
+                    scoreDisplay.innerText = score;
+
+                    // Generate explosion shards
+                    for (let i = 0; i < 15; i++) {
+                        particles.push(new Particle(target.x, target.y, target.vx, target.vy));
+                    }
+                }
+            });
+        }
+
+        // Mouse & Touch Tracking
+        function addTrackPoint(x, y) {
+            sliceTracks.push({ x, y, age: 0 });
+            if (sliceTracks.length > 1) {
+                handleSlice(sliceTracks[sliceTracks.length - 2], sliceTracks[sliceTracks.length - 1]);
+            }
+        }
+
+        window.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            sliceTracks = [];
+            addTrackPoint(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isMouseDown) return;
+            addTrackPoint(e.clientX, e.clientY);
+        });
+
+        window.addEventListener('mouseup', () => isMouseDown = false);
+
+        // Touch support for mobile devices
+        window.addEventListener('touchstart', (e) => {
+            isMouseDown = true;
+            sliceTracks = [];
+            addTrackPoint(e.touches[0].clientX, e.touches[0].clientY);
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isMouseDown) return;
+            addTrackPoint(e.touches[0].clientX, e.touches[0].clientY);
+        });
+
+        window.addEventListener('touchend', () => isMouseDown = false);
+
+
+        // Main Game Loop
+        function animate() {
+            // Clear Screen with slight opacity trail for visual motion blur
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Update and Draw Targets
+            for (let i = targets.length - 1; i >= 0; i--) {
+                targets[i].update();
+                targets[i].draw();
+
+                // Remove off-screen targets
+                if (targets[i].y > canvas.height + 150 || targets[i].isSliced) {
+                    targets.splice(i, 1);
+                }
+            }
+
+            // 2. Update and Draw Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+
+                if (particles[i].alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // 3. Draw Slicing Glow Blade
+            ctx.beginPath();
+            for (let i = 0; i < sliceTracks.length; i++) {
+                const pt = sliceTracks[i];
+                ctx.lineWidth = Math.max(1, 8 - pt.age);
+                ctx.strokeStyle = `rgba(255, 71, 87, ${1 - pt.age / 10})`;
+                ctx.lineCap = 'round';
+                
+                if (i === 0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+                
+                pt.age++;
+            }
+            ctx.stroke();
+
+            // Clean up old blade points
+            sliceTracks = sliceTracks.filter(pt => pt.age < 10);
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start the game loop
+        animate();
+    </script>
+</body>
+</html>
