@@ -1,333 +1,541 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rage Slice</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Rage Slice - Fruit Ninja Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-<style>
-:root{
-    --sage:#A8BBA3;
-    --sage-dark:#7D9277;
-    --bg:#EDF4EB;
-}
+        body {
+            overflow: hidden;
+            background: radial-gradient(circle at 20% 30%, #1a472a, #0a1f0e);
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            touch-action: none; /* Improves touch slicing */
+        }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+        /* Top UI Bar */
+        #topBar {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 8px 20px;
+            border-radius: 60px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,215,0,0.3);
+        }
 
-body{
-    overflow:hidden;
-    background:linear-gradient(180deg,var(--bg),#dce8d8);
-    font-family:Arial,sans-serif;
-}
+        button, label {
+            background: linear-gradient(135deg, #ffb347, #ff8c00);
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            letter-spacing: 0.5px;
+        }
+        
+        button:active, label:active {
+            transform: scale(0.96);
+        }
 
-#topBar{
-    position:fixed;
-    top:10px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:100;
-    display:flex;
-    gap:10px;
-    align-items:center;
-    background:white;
-    padding:10px 15px;
-    border-radius:20px;
-    box-shadow:0 5px 15px rgba(0,0,0,.1);
-}
+        input {
+            display: none;
+        }
 
-button,label{
-    background:var(--sage);
-    color:white;
-    border:none;
-    padding:10px 15px;
-    border-radius:12px;
-    cursor:pointer;
-}
+        #score {
+            font-size: 24px;
+            font-weight: 800;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 16px;
+            border-radius: 40px;
+            color: #ffde9c;
+            text-shadow: 0 0 4px #ff7700;
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
 
-input{
-    display:none;
-}
+        /* Game container - full screen */
+        #game {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
 
-#score{
-    font-size:20px;
-    color:var(--sage-dark);
-    font-weight:bold;
-}
+        /* Flying objects - your uploaded images */
+        .flying {
+            position: absolute;
+            width: 110px;
+            height: 110px;
+            object-fit: contain;
+            user-select: none;
+            pointer-events: none;  /* let slice detection happen via mouse/touch coordinates */
+            filter: drop-shadow(0 10px 12px rgba(0,0,0,0.3));
+            transition: filter 0.05s;
+            will-change: transform;
+            border-radius: 20px;
+            background: rgba(255,255,240,0.15);
+            backdrop-filter: brightness(1.05);
+        }
 
-#game{
-    width:100vw;
-    height:100vh;
-    position:relative;
-    overflow:hidden;
-}
+        /* Slice trail effect (glowing line) */
+        .sliceTrail {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            background: radial-gradient(circle, #ffcc44, #ff9933);
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(3px);
+            opacity: 0.9;
+            transform: scale(0.5);
+            animation: trailFade 0.25s ease-out forwards;
+            z-index: 300;
+        }
 
-.flying{
-    position:absolute;
-    width:120px;
-    height:120px;
-    object-fit:cover;
-    user-select:none;
-    pointer-events:none;
-    border-radius:15px;
-}
+        @keyframes trailFade {
+            0% { opacity: 1; transform: scale(0.6); }
+            100% { opacity: 0; transform: scale(2.2); background: #ffdd88; }
+        }
 
-.sliceTrail{
-    position:absolute;
-    width:20px;
-    height:20px;
-    background:white;
-    border-radius:50%;
-    pointer-events:none;
-    opacity:.7;
-    animation:fade .3s linear forwards;
-}
+        /* Splatter particles when slice */
+        .particle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #ffbb44, #ff6600);
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(1px);
+            z-index: 250;
+        }
 
-@keyframes fade{
-    to{
-        opacity:0;
-        transform:scale(3);
-    }
-}
+        /* COMBO display */
+        #combo {
+            position: fixed;
+            top: 100px;
+            width: 100%;
+            text-align: center;
+            font-size: 42px;
+            font-weight: 900;
+            color: #ffdd77;
+            text-shadow: 0 0 15px #ff6600, 0 0 5px darkred;
+            pointer-events: none;
+            z-index: 150;
+            font-family: 'Impact', 'Arial Black', sans-serif;
+            letter-spacing: 2px;
+            transition: 0.1s;
+            animation: comboPop 0.3s cubic-bezier(0.34, 1.2, 0.8, 1);
+        }
 
-.particle{
-    position:absolute;
-    width:10px;
-    height:10px;
-    background:var(--sage-dark);
-    border-radius:50%;
-    pointer-events:none;
-}
+        @keyframes comboPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* juice splash extra */
+        .slashFlash {
+            position: absolute;
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle, #ffff99, #ffaa33);
+            border-radius: 50%;
+            pointer-events: none;
+            filter: blur(6px);
+            animation: flashOut 0.2s forwards;
+            z-index: 280;
+        }
+        
+        @keyframes flashOut {
+            0% { opacity: 0.9; transform: scale(0.3); }
+            100% { opacity: 0; transform: scale(1.8); }
+        }
 
-#combo{
-    position:fixed;
-    top:80px;
-    width:100%;
-    text-align:center;
-    font-size:32px;
-    font-weight:bold;
-    color:var(--sage-dark);
-    pointer-events:none;
-}
-</style>
+        /* subtle instructions */
+        .instruction {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255,235,180,0.7);
+            background: rgba(0,0,0,0.4);
+            width: fit-content;
+            margin: 0 auto;
+            padding: 5px 14px;
+            border-radius: 30px;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+            z-index: 100;
+            font-weight: bold;
+        }
+    </style>
 </head>
-
 <body>
 
 <div id="topBar">
-    <label>
-        Upload Pics
-        <input type="file" id="upload" multiple accept="image/*">
+    <label for="uploadInput">
+        📸 UPLOAD IMAGES
+        <input type="file" id="uploadInput" multiple accept="image/*">
     </label>
-
-    <button id="startBtn">Start</button>
-
-    <div id="score">Score: 0</div>
+    <button id="startBtn">⚔️ SLICE MODE ⚔️</button>
+    <div id="score">🍎 0</div>
 </div>
 
 <div id="combo"></div>
-
 <div id="game"></div>
+<div class="instruction">✂️ SLICE with MOUSE or FINGER — Upload your own pics first! ✂️</div>
 
-<audio id="sliceSound">
-<source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9fd8f0.mp3?filename=swoosh-6435.mp3">
+<audio id="sliceSound" preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9fd8f0.mp3?filename=swoosh-6435.mp3" type="audio/mpeg">
 </audio>
 
 <script>
-
-const game=document.getElementById("game");
-const upload=document.getElementById("upload");
-const scoreText=document.getElementById("score");
-const comboText=document.getElementById("combo");
-const sound=document.getElementById("sliceSound");
-
-let images=[];
-let score=0;
-let combo=0;
-
-upload.addEventListener("change",e=>{
-    images=[];
-
-    [...e.target.files].forEach(file=>{
-        const reader=new FileReader();
-
-        reader.onload=()=>{
-            images.push(reader.result);
-        };
-
-        reader.readAsDataURL(file);
-    });
-
-    alert("Images loaded!");
-});
-
-document.getElementById("startBtn").onclick=()=>{
-    if(images.length===0){
-        alert("Upload pictures first!");
-        return;
-    }
-
-    setInterval(spawnImage,700);
-};
-
-function spawnImage(){
-
-    const img=document.createElement("img");
-
-    img.className="flying";
-    img.src=images[Math.floor(Math.random()*images.length)];
-
-    const size=90+Math.random()*60;
-
-    img.style.width=size+"px";
-    img.style.height=size+"px";
-
-    const startX=Math.random()*(window.innerWidth-size);
-
-    img.x=startX;
-    img.y=window.innerHeight+100;
-
-    img.vx=(Math.random()-0.5)*6;
-    img.vy=-(12+Math.random()*5);
-
-    game.appendChild(img);
-
-    animate(img);
-}
-
-function animate(img){
-
-    function frame(){
-
-        img.vy+=0.25;
-
-        img.x+=img.vx;
-        img.y+=img.vy;
-
-        img.style.left=img.x+"px";
-        img.style.top=img.y+"px";
-
-        if(img.y>window.innerHeight+200){
-
-            img.remove();
-            return;
+    (function(){
+        // ----- DOM elements -----
+        const gameContainer = document.getElementById("game");
+        const uploadInput = document.getElementById("uploadInput");
+        const startBtn = document.getElementById("startBtn");
+        const scoreSpan = document.getElementById("score");
+        const comboDiv = document.getElementById("combo");
+        const sliceAudio = document.getElementById("sliceSound");
+        
+        // ----- Game state -----
+        let uploadedImages = [];     // stores dataURLs of uploaded images
+        let score = 0;
+        let combo = 0;
+        let comboTimeout = null;
+        let spawnInterval = null;
+        let gameActive = false;      // whether slicing & spawning are running
+        let animationFrameIds = new Set(); // track flying animations to clean
+        
+        // flying objects array for safe management (optional)
+        let activeItems = new Set();
+        
+        // ----- Helper: update score UI -----
+        function updateScoreUI() {
+            scoreSpan.innerText = `⚡ ${score}`;
         }
-
-        requestAnimationFrame(frame);
-    }
-
-    frame();
-}
-
-let lastX=0;
-let lastY=0;
-
-function trail(x,y){
-
-    const t=document.createElement("div");
-    t.className="sliceTrail";
-
-    t.style.left=x+"px";
-    t.style.top=y+"px";
-
-    game.appendChild(t);
-
-    setTimeout(()=>t.remove(),300);
-}
-
-function explode(x,y){
-
-    for(let i=0;i<20;i++){
-
-        const p=document.createElement("div");
-        p.className="particle";
-
-        p.style.left=x+"px";
-        p.style.top=y+"px";
-
-        game.appendChild(p);
-
-        const dx=(Math.random()-0.5)*200;
-        const dy=(Math.random()-0.5)*200;
-
-        p.animate([
-            {transform:'translate(0,0)',opacity:1},
-            {transform:`translate(${dx}px,${dy}px)`,opacity:0}
-        ],{
-            duration:600
-        });
-
-        setTimeout(()=>p.remove(),600);
-    }
-}
-
-function slice(x,y){
-
-    document.querySelectorAll(".flying").forEach(img=>{
-
-        const rect=img.getBoundingClientRect();
-
-        if(
-            x>rect.left &&
-            x<rect.right &&
-            y>rect.top &&
-            y<rect.bottom
-        ){
-
+        
+        // ----- Show combo with animation & reset timer -----
+        function triggerCombo() {
+            if(comboTimeout) clearTimeout(comboTimeout);
+            comboDiv.innerText = `🔥 COMBO x${combo} 🔥`;
+            comboDiv.style.animation = 'none';
+            comboDiv.offsetHeight; // force reflow
+            comboDiv.style.animation = 'comboPop 0.3s cubic-bezier(0.34, 1.2, 0.8, 1)';
+            
+            comboTimeout = setTimeout(() => {
+                if(comboDiv) comboDiv.innerText = "";
+            }, 900);
+        }
+        
+        // ----- Reset combo (when missing slice for a while but not used now - but we keep)
+        function resetCombo(resetValue = false) {
+            if(comboTimeout) clearTimeout(comboTimeout);
+            combo = 0;
+            comboDiv.innerText = "";
+        }
+        
+        // ----- Increase score & combo on slice -----
+        function addScore() {
             score++;
             combo++;
-
-            scoreText.innerText="Score: "+score;
-
-            comboText.innerText="COMBO x"+combo;
-
-            setTimeout(()=>{
-                comboText.innerText="";
-            },800);
-
-            sound.currentTime=0;
-            sound.play();
-
-            if(navigator.vibrate){
-                navigator.vibrate(40);
-            }
-
-            explode(
-                rect.left+rect.width/2,
-                rect.top+rect.height/2
-            );
-
-            img.remove();
+            updateScoreUI();
+            triggerCombo();
         }
-    });
-}
-
-document.addEventListener("mousemove",e=>{
-
-    trail(e.clientX,e.clientY);
-
-    slice(e.clientX,e.clientY);
-
-    lastX=e.clientX;
-    lastY=e.clientY;
-});
-
-document.addEventListener("touchmove",e=>{
-
-    const t=e.touches[0];
-
-    trail(t.clientX,t.clientY);
-
-    slice(t.clientX,t.clientY);
-
-    lastX=t.clientX;
-    lastY=t.clientY;
-},{passive:true});
-
-</script>
-
-</body>
-</html>
+        
+        // ----- Special effect: Explode particles at hit point -----
+        function explodeAt(x, y) {
+            // burst particles
+            const particleCount = 22;
+            for(let i = 0; i < particleCount; i++) {
+                const p = document.createElement("div");
+                p.className = "particle";
+                p.style.left = x + "px";
+                p.style.top = y + "px";
+                gameContainer.appendChild(p);
+                
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 80 + Math.random() * 180;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                
+                p.animate([
+                    { transform: 'translate(0px, 0px) scale(1)', opacity: 1 },
+                    { transform: `translate(${vx}px, ${vy}px) scale(0)`, opacity: 0 }
+                ], { duration: 550, easing: 'cubic-bezier(0.2, 0.9, 0.4, 1)' });
+                
+                setTimeout(() => p.remove(), 600);
+            }
+            
+            // add flash effect
+            const flash = document.createElement("div");
+            flash.className = "slashFlash";
+            flash.style.left = (x - 20) + "px";
+            flash.style.top = (y - 20) + "px";
+            gameContainer.appendChild(flash);
+            setTimeout(() => flash.remove(), 200);
+            
+            // optional haptic feedback
+            if(navigator.vibrate) {
+                navigator.vibrate(35);
+            }
+        }
+        
+        // ----- Play slice sound (with safe error handling)-----
+        function playSliceSound() {
+            if(sliceAudio) {
+                sliceAudio.currentTime = 0;
+                sliceAudio.play().catch(e => console.log("audio play failed", e));
+            }
+        }
+        
+        // ----- SLICE LOGIC: check all flying objects at given pointer coordinates -----
+        function performSlice(clientX, clientY) {
+            if(!gameActive) return false;  // only slice when game active
+            
+            let hitAnything = false;
+            // we collect all flying elements currently in DOM
+            const flyingItems = document.querySelectorAll('.flying');
+            
+            for(let img of flyingItems) {
+                const rect = img.getBoundingClientRect();
+                // check if point inside image bounding box
+                if(clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                    hitAnything = true;
+                    // get center for explosion
+                    const centerX = rect.left + rect.width / 2;
+                    const centerY = rect.top + rect.height / 2;
+                    
+                    // increase score, combo & update
+                    addScore();
+                    playSliceSound();
+                    explodeAt(centerX, centerY);
+                    
+                    // remove this flying image instantly
+                    img.remove();
+                    activeItems.delete(img);
+                }
+            }
+            
+            // small juice: if no hit, we could reduce combo but Fruit Ninja style keeps combo if slice missed? Actually we keep combo only on hit.
+            // If you slice but miss nothing, combo stays same, no penalty. That's fine.
+            return hitAnything;
+        }
+        
+        // ----- Slice trail effect (visual swipe) -----
+        function addSliceTrail(x, y) {
+            const trail = document.createElement("div");
+            trail.className = "sliceTrail";
+            trail.style.left = (x - 10) + "px";
+            trail.style.top = (y - 10) + "px";
+            gameContainer.appendChild(trail);
+            setTimeout(() => trail.remove(), 280);
+        }
+        
+        // ----- Mouse / Touch handlers with smooth slicing -----
+        let lastTrailX = 0, lastTrailY = 0;
+        
+        function handlePointerMove(clientX, clientY) {
+            if(!gameActive) return;
+            // add visual trail
+            addSliceTrail(clientX, clientY);
+            // slice detection
+            performSlice(clientX, clientY);
+            lastTrailX = clientX;
+            lastTrailY = clientY;
+        }
+        
+        // Mouse move
+        document.addEventListener("mousemove", (e) => {
+            handlePointerMove(e.clientX, e.clientY);
+        });
+        
+        // Touch move (mobile)
+        document.addEventListener("touchmove", (e) => {
+            e.preventDefault();  // prevent scrolling while playing
+            const touch = e.touches[0];
+            if(touch) {
+                handlePointerMove(touch.clientX, touch.clientY);
+            }
+        }, { passive: false });
+        
+        // Also touch start can slice?
+        document.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            if(touch && gameActive) {
+                addSliceTrail(touch.clientX, touch.clientY);
+                performSlice(touch.clientX, touch.clientY);
+            }
+        }, { passive: false });
+        
+        // mouse down for initial slice? allow left click slice
+        document.addEventListener("mousedown", (e) => {
+            if(gameActive) {
+                addSliceTrail(e.clientX, e.clientY);
+                performSlice(e.clientX, e.clientY);
+            }
+        });
+        
+        // ----- Animation logic for each flying item (gravity + bounce off edges slight) -----
+        function animateFlying(imgElem, startX, startY, vx, vy) {
+            let x = startX;
+            let y = startY;
+            let velX = vx;
+            let velY = vy;
+            const gravity = 0.28;
+            const widthLimit = window.innerWidth;
+            const heightLimit = window.innerHeight;
+            
+            function updatePosition() {
+                if(!imgElem || !imgElem.isConnected) return; // removed already
+                
+                velY += gravity;
+                x += velX;
+                y += velY;
+                
+                // optional edge boundaries: allow some horizontal bounce for fun but not too strict
+                const objWidth = imgElem.offsetWidth;
+                const objHeight = imgElem.offsetHeight;
+                if(x < 0) { x = 0; velX = Math.abs(velX) * 0.8; }
+                if(x + objWidth > widthLimit) { x = widthLimit - objWidth; velX = -Math.abs(velX) * 0.8; }
+                
+                // if fly above top? not needed but avoid stuck
+                if(y + objHeight < 0) {
+                    // remove if fly off top (rare with start from bottom but safe)
+                    if(imgElem && imgElem.remove) imgElem.remove();
+                    activeItems.delete(imgElem);
+                    return;
+                }
+                
+                // if it falls below screen bottom + extra remove
+                if(y > heightLimit + 300) {
+                    if(imgElem && imgElem.remove) imgElem.remove();
+                    activeItems.delete(imgElem);
+                    return;
+                }
+                
+                imgElem.style.left = x + "px";
+                imgElem.style.top = y + "px";
+                requestAnimationFrame(updatePosition);
+            }
+            
+            requestAnimationFrame(updatePosition);
+        }
+        
+        // ----- SPAWN a flying image with random momentum (like fruit ninja)-----
+        function spawnFlyingImage() {
+            if(!gameActive) return;
+            if(uploadedImages.length === 0) return;
+            
+            const imgElement = document.createElement("img");
+            const randomImgUrl = uploadedImages[Math.floor(Math.random() * uploadedImages.length)];
+            imgElement.src = randomImgUrl;
+            imgElement.className = "flying";
+            
+            // Random size between 80px and 140px (makes gameplay varied)
+            const size = 85 + Math.random() * 65;
+            imgElement.style.width = size + "px";
+            imgElement.style.height = size + "px";
+            
+            // start from bottom area (like fruit ninja launch)
+            const startX = Math.random() * (window.innerWidth - size);
+            const startY = window.innerHeight - 20 - Math.random() * 70;
+            
+            // velocity: upward with random horizontal curve
+            const velX = (Math.random() - 0.5) * 7.5;
+            const velY = -(12 + Math.random() * 9);   // upward arc
+            
+            imgElement.style.left = startX + "px";
+            imgElement.style.top = startY + "px";
+            imgElement.style.transform = "rotate(" + (Math.random() * 30 - 15) + "deg)";
+            
+            gameContainer.appendChild(imgElement);
+            activeItems.add(imgElement);
+            
+            // start custom physics animation
+            animateFlying(imgElement, startX, startY, velX, velY);
+        }
+        
+        // ----- Start spawning loop (clear old first)-----
+        function startSpawning() {
+            if(spawnInterval) clearInterval(spawnInterval);
+            // spawn rate: 0.65 seconds (similar to classic)
+            spawnInterval = setInterval(() => {
+                if(gameActive && uploadedImages.length > 0) {
+                    spawnFlyingImage();
+                    // sometimes double spawn? no, single feels consistent
+                }
+            }, 680);
+        }
+        
+        // ----- Stop game and clear all flying objects -----
+        function stopGameAndClear() {
+            gameActive = false;
+            if(spawnInterval) {
+                clearInterval(spawnInterval);
+                spawnInterval = null;
+            }
+            // remove all flying objects from DOM
+            const allFlying = document.querySelectorAll('.flying');
+            allFlying.forEach(img => img.remove());
+            activeItems.clear();
+            // also optional combo reset, but keep score for next round? we can reset score when starting? or keep?
+            // but we will not reset score automatically when stop; only when start new session? Usually start fresh each start.
+        }
+        
+        // ----- reset game state fully for fresh start (score zero, combo clear)-----
+        function fullGameReset() {
+            score = 0;
+            combo = 0;
+            updateScoreUI();
+            comboDiv.innerText = "";
+            if(comboTimeout) clearTimeout(comboTimeout);
+            // remove all items
+            const allFlying = document.querySelectorAll('.flying');
+            allFlying.forEach(img => img.remove());
+            activeItems.clear();
+        }
+        
+        // ----- Begin Game session (after images uploaded) -----
+        function beginGame() {
+            if(uploadedImages.length === 0) {
+                alert("⚠️ No images uploaded! Please upload pictures first (JPG/PNG). They will be your fruit! ⚠️");
+                return false;
+            }
+            // stop previous ongoing game & clear objects
+            if(spawnInterval) {
+                clearInterval(spawnInterval);
+                spawnInterval = null;
+            }
+            // reset game variables
+            gameActive = true;
+            fullGameReset();  // score=0, combo=0, remove existing items
+            // start spawning items
+            startSpawning();
+            return true;
+        }
+    
