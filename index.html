@@ -3,368 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rage Ninja - Slice Your Frustrations</title>
+    <title>Ninja Slicing Sound Effects</title>
     <style>
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         body {
             margin: 0;
-            padding: 0;
-            background: #1a1a1a;
-            color: #fff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
             min-height: 100vh;
-            overflow: hidden;
-            user-select: none;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-
-        #ui-container {
-            position: absolute;
-            top: 20px;
-            z-index: 10;
+        
+        .container {
             text-align: center;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
-            border-radius: 10px;
-            border: 2px solid #ff4757;
-            box-shadow: 0 0 15px rgba(255, 71, 87, 0.5);
+            padding: 20px;
         }
-
+        
         h1 {
-            margin: 0 0 10px 0;
-            font-size: 24px;
-            color: #ff4757;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            margin-bottom: 10px;
         }
-
-        .btn-upload {
-            background: #ff4757;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-            display: inline-block;
+        
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 30px;
         }
-
-        .btn-upload:hover {
-            background: #ff6b81;
-            transform: scale(1.05);
+        
+        .canvas-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        #score-board {
-            margin-top: 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
+        
         canvas {
             display: block;
-            background: #0a0a0a;
+            margin: 0 auto;
+            border-radius: 10px;
             cursor: crosshair;
+            background: linear-gradient(145deg, #2a2a3e, #1e1e2e);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
         }
-
-        #instructions {
-            position: absolute;
-            bottom: 20px;
-            color: #888;
-            font-size: 14px;
+        
+        .stats {
+            margin-top: 20px;
+            color: white;
+            font-size: 18px;
+        }
+        
+        .slice-count {
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: inline-block;
+            margin: 10px;
+        }
+        
+        .slice-count span {
+            color: #ff5722;
+            font-size: 28px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .volume-control {
+            margin-top: 20px;
+            color: white;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes sliceFlash {
+            0% { opacity: 0; }
+            50% { opacity: 0.3; background: rgba(255,255,255,0.5); }
+            100% { opacity: 0; }
+        }
+        
+        .flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
+            animation: sliceFlash 0.1s ease-out;
         }
     </style>
 </head>
 <body>
-
-    <div id="ui-container">
-        <h1>Rage Ninja</h1>
-        <label class="btn-upload">
-            Upload Target Photo
-            <input type="file" id="imageLoader" accept="image/*">
-        </label>
-        <div id="score-board">Slices: <span id="score">0</span></div>
+    <div class="container">
+        <h1>⚔️ Ninja Slicing Simulator ⚔️</h1>
+        <div class="subtitle">✂️ Drag mouse across the screen to slice! ✂️</div>
+        
+        <div class="canvas-container">
+            <canvas id="sliceCanvas" width="800" height="500"></canvas>
+        </div>
+        
+        <div class="stats">
+            <div class="slice-count">
+                ✨ Slices: <span id="sliceCounter">0</span>
+            </div>
+            <div class="volume-control">
+                🔊 SFX Volume: <input type="range" id="volumeSlider" min="0" max="100" value="70">
+                <span id="volumeValue">70</span>%
+            </div>
+        </div>
+        
+        <button id="resetBtn">🔄 Reset Counter</button>
+        <button id="testSliceBtn">🗡️ Test Slice Sound</button>
     </div>
 
-    <canvas id="gameCanvas"></canvas>
-    
-    <div id="instructions">Click and drag your mouse/finger to slice!</div>
-
     <script>
-        const canvas = document.getElementById('gameCanvas');
+        // ========== SOUND ENGINE ==========
+        let audioContext = null;
+        let masterGain = null;
+        let sliceCount = 0;
+        
+        // Track last slice time for cooldown
+        let lastSliceTime = 0;
+        const MIN_SLICE_INTERVAL = 50; // ms
+        
+        // Volume control
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+        
+        // Initialize audio on first user interaction
+        async function initAudio() {
+            if (audioContext) return audioContext;
+            
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            masterGain = audioContext.createGain();
+            masterGain.connect(audioContext.destination);
+            
+            // Set initial volume
+            const initialVol = volumeSlider.value / 100;
+            masterGain.gain.value = initialVol;
+            
+            await audioContext.resume();
+            return audioContext;
+        }
+        
+        // Generate slicing sound (whoosh + sharp cut)
+        async function playSliceSound(intensity = 0.7) {
+            if (!audioContext) {
+                await initAudio();
+            }
+            
+            if (!audioContext || audioContext.state !== 'running') return;
+            
+            const now = audioContext.currentTime;
+            
+            // Cooldown to prevent overlapping sounds
+            if (now - lastSliceTime < MIN_SLICE_INTERVAL) return;
+            lastSliceTime = now;
+            
+            // Create oscillator for the "whoosh" sound
+            const whooshOsc = audioContext.createOscillator();
+            const whooshGain = audioContext.createGain();
+            
+            // Create filter for realism
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.Q.value = 2;
+            
+            whooshOsc.connect(filter);
+            filter.connect(whooshGain);
+            whooshGain.connect(masterGain);
+            
+            // Whoosh parameters - sweeping frequency
+            const startFreq = 200 + (intensity * 300);
+            const endFreq = 800 + (intensity * 500);
+            whooshOsc.frequency.setValueAtTime(startFreq, now);
+            whooshOsc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.15);
+            
+            // Envelope for whoosh
+            whooshGain.gain.setValueAtTime(0.2 * intensity, now);
+            whooshGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+            
+            whooshOsc.type = 'sawtooth';
+            whooshOsc.start(now);
+            whooshOsc.stop(now + 0.25);
+            
+            // ========== Sharp cut sound (higher frequency) ==========
+            const cutOsc = audioContext.createOscillator();
+            const cutGain = audioContext.createGain();
+            
+            cutOsc.connect(cutGain);
+            cutGain.connect(masterGain);
+            
+            // Sharp transient sound
+            cutOsc.frequency.setValueAtTime(1500 + (intensity * 500), now);
+            cutOsc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+            
+            cutGain.gain.setValueAtTime(0.15 * intensity, now);
+            cutGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            
+            cutOsc.type = 'square';
+            cutOsc.start(now);
+            cutOsc.stop(now + 0.12);
+            
+            // ========== Noise burst (for texture) ==========
+            const bufferSize = 4096;
+            const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const noiseData = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                noiseData[i] = (Math.random() - 0.5) * 0.5;
+            }
+            
+            const noiseSource = audioContext.createBufferSource();
+            const noiseGain = audioContext.createGain();
+            const noiseFilter = audioContext.createBiquadFilter();
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.value = 1000;
+            
+            noiseSource.buffer = noiseBuffer;
+            noiseSource.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(masterGain);
+            
+            noiseGain.gain.setValueAtTime(0.08 * intensity, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            
+            noiseSource.start(now);
+            noiseSource.stop(now + 0.08);
+        }
+        
+        // ========== CANVAS SLICING ==========
+        const canvas = document.getElementById('sliceCanvas');
         const ctx = canvas.getContext('2d');
-        const imageLoader = document.getElementById('imageLoader');
-        const scoreDisplay = document.getElementById('score');
-
-        // Resize canvas to fill window
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        // Game State
-        let score = 0;
-        let targets = [];
+        const sliceCounterSpan = document.getElementById('sliceCounter');
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
         let particles = [];
-        let sliceTracks = [];
-        let isMouseDown = false;
-        let targetImg = null;
-
-        // Default Target (a red angry square if no image is uploaded)
-        const createDefaultTarget = () => {
-            const canvasDummy = document.createElement('canvas');
-            canvasDummy.width = 100;
-            canvasDummy.height = 100;
-            const dCtx = canvasDummy.getContext('2d');
-            dCtx.fillStyle = '#ff4757';
-            dCtx.fillRect(0, 0, 100, 100);
-            dCtx.fillStyle = '#ffffff';
-            dCtx.font = 'bold 16px Arial';
-            dCtx.fillText('RAGE', 25, 55);
-            const img = new Image();
-            img.src = canvasDummy.toDataURL();
-            return img;
-        };
-
-        targetImg = createDefaultTarget();
-
-        // Handle Image Upload
-        imageLoader.addEventListener('change', (e) => {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    targetImg = img;
-                }
-                img.src = event.target.result;
-            }
-            reader.readAsDataURL(e.target.files[0]);
-        });
-
-        // Target Class (The flying objects)
-        class Target {
-            constructor() {
-                this.size = 120; 
-                this.x = Math.random() * (canvas.width - this.size) + this.size/2;
-                this.y = canvas.height + this.size;
-                
-                // Physics
-                this.vx = (Math.random() - 0.5) * 8; // Side-to-side speed
-                this.vy = -(Math.random() * 5 + 14); // Jump strength
-                this.gravity = 0.3;
-                
-                // Rotation
-                this.angle = 0;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
-                
-                this.isSliced = false;
-            }
-
-            update() {
-                this.vy += this.gravity;
-                this.x += this.vx;
-                this.y += this.vy;
-                this.angle += this.rotationSpeed;
-            }
-
-            draw() {
-                if (this.isSliced) return;
-
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.angle);
-                
-                // Draw clipped image in a circle or square
-                ctx.beginPath();
-                ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
-                ctx.closePath();
-                ctx.clip();
-                
-                // Draw the user image
-                ctx.drawImage(targetImg, -this.size / 2, -this.size / 2, this.size, this.size);
-                
-                // Add a red angry border
-                ctx.strokeStyle = '#ff4757';
-                ctx.lineWidth = 3;
-                ctx.stroke();
-                
-                ctx.restore();
-            }
-        }
-
-        // Particle Class for Juicy Explosions
-        class Particle {
-            constructor(x, y, vx, vy) {
+        
+        // Visual particles for slice effect
+        class SlashParticle {
+            constructor(x, y, angle) {
                 this.x = x;
                 this.y = y;
-                this.size = Math.random() * 20 + 10;
-                this.vx = vx + (Math.random() - 0.5) * 10;
-                this.vy = vy + (Math.random() - 0.5) * 10;
-                this.gravity = 0.4;
-                this.alpha = 1;
-                this.rotation = Math.random() * Math.PI;
+                this.vx = Math.cos(angle) * (Math.random() * 3 + 2);
+                this.vy = Math.sin(angle) * (Math.random() * 3 + 2);
+                this.life = 1;
+                this.size = Math.random() * 3 + 1;
             }
-
+            
             update() {
-                this.vy += this.gravity;
                 this.x += this.vx;
                 this.y += this.vy;
-                this.alpha -= 0.02;
+                this.life -= 0.03;
+                this.size *= 0.97;
+                return this.life > 0;
             }
-
-            draw() {
+            
+            draw(ctx) {
                 ctx.save();
-                ctx.globalAlpha = this.alpha;
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-                
-                // Render pieces of the image as fragments
-                ctx.drawImage(targetImg, -this.size/2, -this.size/2, this.size, this.size);
-                
-                // Overlay red tint
-                ctx.fillStyle = 'rgba(255, 71, 87, 0.3)';
-                ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
-                
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = '#ff5722';
+                ctx.fillStyle = `rgba(255, 87, 34, ${this.life * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.restore();
             }
         }
-
-        // Spawn Mechanics
-        function spawnTarget() {
-            if (targets.length < 4) { // Limits max active targets on screen
-                targets.push(new Target());
-            }
-            // Dynamic random spawning
-            setTimeout(spawnTarget, Math.random() * 1500 + 500);
-        }
-        spawnTarget();
-
-        // Line Intersection formula to check if slice cuts through target
-        function checkIntersection(p1, p2, target) {
-            const distance = Math.abs((p2.y - p1.y) * target.x - (p2.x - p1.x) * target.y + p2.x * p1.y - p2.y * p1.x) / 
-                             Math.sqrt(Math.pow(p2.y - p1.y, 2) + Math.pow(p2.x - p1.x, 2));
+        
+        // Draw slice trail on canvas
+        function drawSlice(x1, y1, x2, y2, intensity) {
+            ctx.save();
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ff5722';
             
-            // Check if the line is close enough to target center and if mouse swipe spans across it
-            const minX = Math.min(p1.x, p2.x) - 20;
-            const maxX = Math.max(p1.x, p2.x) + 20;
-            const minY = Math.min(p1.y, p2.y) - 20;
-            const maxY = Math.max(p1.y, p2.y) + 20;
-
-            return distance < (target.size / 2) && 
-                   target.x >= minX && target.x <= maxX && 
-                   target.y >= minY && target.y <= maxY;
-        }
-
-        // Process slicing action
-        function handleSlice(p1, p2) {
-            targets.forEach(target => {
-                if (!target.isSliced && checkIntersection(p1, p2, target)) {
-                    target.isSliced = true;
-                    score++;
-                    scoreDisplay.innerText = score;
-
-                    // Generate explosion shards
-                    for (let i = 0; i < 15; i++) {
-                        particles.push(new Particle(target.x, target.y, target.vx, target.vy));
-                    }
-                }
-            });
-        }
-
-        // Mouse & Touch Tracking
-        function addTrackPoint(x, y) {
-            sliceTracks.push({ x, y, age: 0 });
-            if (sliceTracks.length > 1) {
-                handleSlice(sliceTracks[sliceTracks.length - 2], sliceTracks[sliceTracks.length - 1]);
-            }
-        }
-
-        window.addEventListener('mousedown', (e) => {
-            isMouseDown = true;
-            sliceTracks = [];
-            addTrackPoint(e.clientX, e.clientY);
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!isMouseDown) return;
-            addTrackPoint(e.clientX, e.clientY);
-        });
-
-        window.addEventListener('mouseup', () => isMouseDown = false);
-
-        // Touch support for mobile devices
-        window.addEventListener('touchstart', (e) => {
-            isMouseDown = true;
-            sliceTracks = [];
-            addTrackPoint(e.touches[0].clientX, e.touches[0].clientY);
-        });
-
-        window.addEventListener('touchmove', (e) => {
-            if (!isMouseDown) return;
-            addTrackPoint(e.touches[0].clientX, e.touches[0].clientY);
-        });
-
-        window.addEventListener('touchend', () => isMouseDown = false);
-
-
-        // Main Game Loop
-        function animate() {
-            // Clear Screen with slight opacity trail for visual motion blur
-            ctx.fillStyle = 'rgba(10, 10, 10, 0.3)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 1. Update and Draw Targets
-            for (let i = targets.length - 1; i >= 0; i--) {
-                targets[i].update();
-                targets[i].draw();
-
-                // Remove off-screen targets
-                if (targets[i].y > canvas.height + 150 || targets[i].isSliced) {
-                    targets.splice(i, 1);
-                }
-            }
-
-            // 2. Update and Draw Particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw();
-
-                if (particles[i].alpha <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
-
-            // 3. Draw Slicing Glow Blade
+            // Main slice line
             ctx.beginPath();
-            for (let i = 0; i < sliceTracks.length; i++) {
-                const pt = sliceTracks[i];
-                ctx.lineWidth = Math.max(1, 8 - pt.age);
-                ctx.strokeStyle = `rgba(255, 71, 87, ${1 - pt.age / 10})`;
-                ctx.lineCap = 'round';
-                
-                if (i === 0) ctx.moveTo(pt.x, pt.y);
-                else ctx.lineTo(pt.x, pt.y);
-                
-                pt.age++;
-            }
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = `rgba(255, 87, 34, ${0.3 + intensity * 0.5})`;
+            ctx.lineWidth = 6 + intensity * 8;
+            ctx.lineCap = 'round';
             ctx.stroke();
-
-            // Clean up old blade points
-            sliceTracks = sliceTracks.filter(pt => pt.age < 10);
-
+            
+            // Inner bright line
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = `rgba(255, 200, 100, ${0.6 + intensity * 0.4})`;
+            ctx.lineWidth = 2 + intensity * 3;
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // Add particles along the slice
+            const steps = Math.max(5, Math.floor(Math.hypot(x2 - x1, y2 - y1) / 5));
+            for (let i = 0; i <= steps; i++) {
+                const t = i / steps;
+                const x = x1 + (x2 - x1) * t;
+                const y = y1 + (y2 - y1) * t;
+                const angle = Math.atan2(y2 - y1, x2 - x1) + (Math.random() - 0.5) * Math.PI;
+                for (let p = 0; p < 2; p++) {
+                    particles.push(new SlashParticle(x, y, angle));
+                }
+            }
+        }
+        
+        // Update particle system
+        function updateParticles() {
+            particles = particles.filter(p => p.update());
+            particles.forEach(p => p.draw(ctx));
+        }
+        
+        // Animate canvas
+        function animate() {
+            if (!isDrawing) {
+                // Fade effect
+                ctx.fillStyle = 'rgba(30, 30, 46, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            updateParticles();
             requestAnimationFrame(animate);
         }
-
-        // Start the game loop
+        
+        // Clear canvas
+        function clearCanvas() {
+            ctx.fillStyle = '#1e1e2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            particles = [];
+        }
+        
+        // Handle slice action
+        async function handleSlice(x, y, previousX, previousY) {
+            if (!previousX || !previousY) return;
+            
+            const distance = Math.hypot(x - previousX, y - previousY);
+            if (distance < 5) return;
+            
+            // Calculate intensity based on speed
+            const speed = Math.min(1, distance / 30);
+            const intensity = 0.3 + speed * 0.7;
+            
+            // Play sound
+            await playSliceSound(intensity);
+            
+            // Update counter
+            sliceCount++;
+            sliceCounterSpan.textContent = sliceCount;
+            
+            // Visual flash effect
+            const flash = document.createElement('div');
+            flash.className = 'flash';
+            document.body.appendChild(flash);
+            setTimeout(() => flash.remove(), 100);
+            
+            // Draw slice trail
+            drawSlice(previousX, previousY, x, y, intensity);
+            
+            // Vibration if supported (mobile)
+            if (navigator.vibrate) {
+                navigator.vibrate(20);
+            }
+        }
+        
+        // ========== EVENT LISTENERS ==========
+        let isPointerDown = false;
+        
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            let x = (clientX - rect.left) * scaleX;
+            let y = (clientY - rect.top) * scaleY;
+            x = Math.min(Math.max(0, x), canvas.width);
+            y = Math.min(Math.max(0, y), canvas.height);
+            
+            return { x, y };
+        }
+        
+        function onPointerStart(e) {
+            e.preventDefault();
+            isPointerDown = true;
+            const { x, y } = getCanvasCoords(e);
+            lastX = x;
+            lastY = y;
+            
+            // Small impact sound for touch start
+            playSliceSound(0.2);
+        }
+        
+        function onPointerMove(e) {
+            if (!isPointerDown) return;
+            e.preventDefault();
+            
+            const { x, y } = getCanvasCoords(e);
+            handleSlice(x, y, lastX, lastY);
+            lastX = x;
+            lastY = y;
+        }
+        
+        function onPointerEnd(e) {
+            isPointerDown = false;
+            // Fade out trail
+            setTimeout(() => {
+                if (!isPointerDown) {
+                    ctx.fillStyle = 'rgba(30, 30, 46, 0.05)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            }, 100);
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', onPointerStart);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerEnd);
+        
+        // Touch events
+        canvas.addEventListener('touchstart', onPointerStart);
+        window.addEventListener('touchmove', onPointerMove);
+        window.addEventListener('touchend', onPointerEnd);
+        
+        // Prevent context menu on canvas
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            sliceCount = 0;
+            sliceCounterSpan.textContent = sliceCount;
+            clearCanvas();
+            playSliceSound(0.3);
+        });
+        
+        // Test slice button
+        document.getElementById('testSliceBtn').addEventListener('click', async () => {
+            await playSliceSound(0.8);
+            // Visual feedback
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            drawSlice(centerX - 50, centerY, centerX + 50, centerY, 0.8);
+            sliceCount++;
+            sliceCounterSpan.textContent = sliceCount;
+        });
+        
+        // Volume control
+        volumeSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            volumeValue.textContent = val;
+            if (masterGain) {
+                masterGain.gain.value = val / 100;
+            }
+        });
+        
+        // Initialize audio on first ANY click
+        document.body.addEventListener('click', async () => {
+            await initAudio();
+        }, { once: true });
+        
+        // Start animation and clear canvas
+        clearCanvas();
         animate();
+        
+        console.log('🎯 Ninja slicing ready! Drag your mouse/finger to slice!');
     </script>
 </body>
 </html>
