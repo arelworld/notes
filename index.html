@@ -1,513 +1,270 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Photo Fruit Ninja</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+    <title>Arl Note Pro HD</title>
 
-body{
-    overflow:hidden;
-    background:#d8e2dc;
-    font-family:Arial,sans-serif;
-}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-#game{
-    display:block;
-}
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Playfair+Display:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
-.ui{
-    position:fixed;
-    top:15px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:100;
-    display:flex;
-    gap:12px;
-    align-items:center;
-    background:rgba(255,255,255,.9);
-    padding:12px 18px;
-    border-radius:20px;
-    backdrop-filter:blur(10px);
-}
+    <style>
+        :root {
+            --bg: #f0f2f5;
+            --note-bg: #ffffff;
+            --text: #000000;
+        }
 
-.upload{
-    background:#7d9d8c;
-    color:white;
-    padding:10px 15px;
-    border-radius:10px;
-    cursor:pointer;
-    font-weight:bold;
-}
+        .dark-mode {
+            --bg: #1c1c1e;
+            --note-bg: #2c2c2e;
+            --text: #ffffff;
+        }
 
-#score{
-    color:#4d6a5c;
-    font-weight:bold;
-}
+        * {
+            box-sizing: border-box;
+        }
 
-#gameover{
-    position:fixed;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    background:rgba(0,0,0,0.9);
-    color:red;
-    padding:20px 40px;
-    border-radius:20px;
-    font-size:40px;
-    font-weight:bold;
-    z-index:200;
-    display:none;
-    white-space:nowrap;
-}
-</style>
+        body {
+            font-family: -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            margin: 0;
+            transition: 0.3s;
+        }
+
+        .toolbar {
+            background: var(--note-bg);
+            padding: 12px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 400px;
+            justify-content: center;
+        }
+
+        button,
+        select,
+        input[type="color"] {
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            background: #eee;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .save {
+            background: #007aff;
+            color: white;
+        }
+
+        #note-page {
+            background: var(--note-bg);
+            width: 100%;
+            max-width: 400px;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            outline: none;
+            line-height: 1.6;
+            font-size: 17px;
+            color: var(--text);
+            min-height: 250px;
+            word-wrap: break-word;
+        }
+
+        #note-page img {
+            width: 100%;
+            margin-top: 10px;
+            display: block;
+        }
+
+        .highlight {
+            background: #ffd60a;
+            color: black;
+            padding: 0 2px;
+            border-radius: 4px;
+        }
+
+        @media(max-width:500px) {
+            .toolbar {
+                max-width: 100%;
+            }
+
+            #note-page {
+                max-width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<div class="ui">
-    <label class="upload">
-        Upload Photos
-        <input id="upload" type="file" accept="image/*" multiple hidden>
-    </label>
+<div class="toolbar">
 
-    <div id="score">Score: 0</div>
+    <button onclick="document.execCommand('bold')"><b>B</b></button>
+
+    <button onclick="document.execCommand('italic')"><i>I</i></button>
+
+    <button onclick="document.execCommand('underline')"><u>U</u></button>
+
+    <button onclick="applyHighlight()">HL</button>
+
+    <select onchange="changeFont(this.value)">
+        <option value="">Font</option>
+        <option value="Arial">Arial</option>
+        <option value="Roboto">Roboto</option>
+        <option value="Poppins">Poppins</option>
+        <option value="'Playfair Display'">Playfair</option>
+        <option value="'Times New Roman'">Times</option>
+    </select>
+
+    <select onchange="changeSize(this.value)">
+        <option value="">Size</option>
+        <option value="12">12px</option>
+        <option value="14">14px</option>
+        <option value="16">16px</option>
+        <option value="18">18px</option>
+        <option value="20">20px</option>
+        <option value="24">24px</option>
+        <option value="28">28px</option>
+        <option value="32">32px</option>
+        <option value="40">40px</option>
+        <option value="48">48px</option>
+    </select>
+
+    <input type="color" onchange="changeColor(this.value)" title="Text Color">
+
+    <button onclick="document.execCommand('insertUnorderedList')">• List</button>
+
+    <button onclick="document.execCommand('justifyLeft')">⬅</button>
+
+    <button onclick="document.execCommand('justifyCenter')">⬌</button>
+
+    <button onclick="document.execCommand('justifyRight')">➡</button>
+
+    <button onclick="document.body.classList.toggle('dark-mode')">🌓</button>
+
+    <button onclick="document.getElementById('imgInput').click()">🖼</button>
+
+    <button class="save" onclick="exportUltraHD()">💾 Save HD</button>
+
 </div>
 
-<div id="gameover">💣 GAME OVER! YOU CUT A BOMB 💣</div>
+<div id="note-page" contenteditable="true">
+    <h2>My Note</h2>
+    <p>Start typing here...</p>
+</div>
 
-<canvas id="game"></canvas>
+<input type="file" id="imgInput" hidden accept="image/*">
 
 <script>
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+function applyHighlight() {
+    const selection = window.getSelection();
 
-function resize(){
-    canvas.width = innerWidth;
-    canvas.height = innerHeight;
+    if (!selection.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+
+    const span = document.createElement("span");
+    span.className = "highlight";
+
+    try {
+        range.surroundContents(span);
+    } catch {
+        document.execCommand(
+            "insertHTML",
+            false,
+            `<span class="highlight">${selection}</span>`
+        );
+    }
 }
-resize();
-addEventListener("resize",resize);
 
-const uploaded = [];
-const fruits = [];
-const bombs = [];
-const particles = [];
-const trail = [];
+function changeFont(font) {
+    if(font){
+        document.execCommand("fontName", false, font);
+    }
+}
 
-let score = 0;
-let gameRunning = true;
+function changeColor(color) {
+    document.execCommand("foreColor", false, color);
+}
 
-document.getElementById("upload").addEventListener("change",(e)=>{
+function changeSize(size) {
 
-    uploaded.length = 0;
+    const selection = window.getSelection();
 
-    [...e.target.files].forEach(file=>{
+    if (!selection.rangeCount) return;
 
-        const reader = new FileReader();
+    const range = selection.getRangeAt(0);
 
-        reader.onload = ev => {
+    if (range.collapsed) return;
 
-            const img = new Image();
+    const span = document.createElement("span");
+    span.style.fontSize = size + "px";
 
-            img.onload = ()=>uploaded.push(img);
+    try {
+        range.surroundContents(span);
+    } catch {
+        document.execCommand(
+            "insertHTML",
+            false,
+            `<span style="font-size:${size}px">${selection}</span>`
+        );
+    }
+}
 
-            img.src = ev.target.result;
-        };
+document.getElementById("imgInput").onchange = function(e) {
 
-        reader.readAsDataURL(file);
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(event) {
+
+        const img = document.createElement("img");
+        img.src = event.target.result;
+
+        document.getElementById("note-page").appendChild(img);
+    };
+
+    reader.readAsDataURL(file);
+};
+
+async function exportUltraHD() {
+
+    const page = document.getElementById("note-page");
+
+    const canvas = await html2canvas(page, {
+        scale: 5,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+        height: page.scrollHeight
     });
 
-});
+    const link = document.createElement("a");
 
-class Fruit{
+    link.download = "Arl-Note-UltraHD.png";
+    link.href = canvas.toDataURL("image/png", 1.0);
 
-    constructor(img){
-
-        this.img = img;
-
-        this.size = 110 + Math.random()*30;
-
-        this.x = Math.random()*(canvas.width-this.size);
-
-        this.y = canvas.height + 150;
-
-        this.vx = (Math.random()-0.5)*5;
-
-        this.vy = -(13 + Math.random()*5);
-
-        this.gravity = 0.18;
-
-        this.rotation = Math.random()*Math.PI;
-
-        this.rotationSpeed = (Math.random()-0.5)*0.08;
-
-        this.type = Math.floor(Math.random()*4);
-    }
-
-    update(){
-
-        this.vy += this.gravity;
-
-        this.x += this.vx;
-        this.y += this.vy;
-
-        this.rotation += this.rotationSpeed;
-    }
-
-    createFruitPath(){
-
-        // HEART SHAPE MASK for all fruits
-        ctx.save();
-        ctx.beginPath();
-        
-        // Draw a beautiful heart shape centered at 0,0
-        const w = this.size;
-        const h = this.size;
-        
-        ctx.moveTo(0, h * 0.35);
-        ctx.bezierCurveTo(-w * 0.45, -h * 0.15, -w * 0.6, -h * 0.45, -w * 0.55, -h * 0.7);
-        ctx.bezierCurveTo(-w * 0.48, -h * 0.85, -w * 0.25, -h * 0.95, 0, -h * 0.72);
-        ctx.bezierCurveTo(w * 0.25, -h * 0.95, w * 0.48, -h * 0.85, w * 0.55, -h * 0.7);
-        ctx.bezierCurveTo(w * 0.6, -h * 0.45, w * 0.45, -h * 0.15, 0, h * 0.35);
-        ctx.closePath();
-        
-        ctx.restore();
-        ctx.beginPath();
-        ctx.moveTo(0, this.size * 0.35);
-        ctx.bezierCurveTo(-this.size * 0.45, -this.size * 0.15, -this.size * 0.6, -this.size * 0.45, -this.size * 0.55, -this.size * 0.7);
-        ctx.bezierCurveTo(-this.size * 0.48, -this.size * 0.85, -this.size * 0.25, -this.size * 0.95, 0, -this.size * 0.72);
-        ctx.bezierCurveTo(this.size * 0.25, -this.size * 0.95, this.size * 0.48, -this.size * 0.85, this.size * 0.55, -this.size * 0.7);
-        ctx.bezierCurveTo(this.size * 0.6, -this.size * 0.45, this.size * 0.45, -this.size * 0.15, 0, this.size * 0.35);
-        ctx.closePath();
-    }
-
-    draw(){
-
-        ctx.save();
-
-        ctx.translate(
-            this.x + this.size/2,
-            this.y + this.size/2
-        );
-
-        ctx.rotate(this.rotation);
-
-        ctx.beginPath();
-
-        this.createFruitPath();
-
-        ctx.clip();
-
-        ctx.drawImage(
-            this.img,
-            -this.size/2,
-            -this.size/2,
-            this.size,
-            this.size
-        );
-
-        ctx.restore();
-
-        ctx.save();
-
-        ctx.translate(
-            this.x + this.size/2,
-            this.y + this.size/2
-        );
-
-        ctx.rotate(this.rotation);
-
-        ctx.beginPath();
-
-        this.createFruitPath();
-
-        ctx.strokeStyle="#557c69";
-        ctx.lineWidth=4;
-        ctx.stroke();
-
-        ctx.restore();
-    }
+    link.click();
 }
-
-class Bomb {
-    constructor(){
-        this.size = 80 + Math.random()*25;
-        this.x = Math.random()*(canvas.width-this.size);
-        this.y = canvas.height + 150;
-        this.vx = (Math.random()-0.5)*5;
-        this.vy = -(13 + Math.random()*5);
-        this.gravity = 0.18;
-        this.rotation = Math.random()*Math.PI;
-        this.rotationSpeed = (Math.random()-0.5)*0.08;
-    }
-    
-    update(){
-        this.vy += this.gravity;
-        this.x += this.vx;
-        this.y += this.vy;
-        this.rotation += this.rotationSpeed;
-    }
-    
-    draw(){
-        ctx.save();
-        ctx.translate(this.x + this.size/2, this.y + this.size/2);
-        ctx.rotate(this.rotation);
-        
-        // Draw bomb body
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size/2, 0, Math.PI*2);
-        ctx.fillStyle = "#1a1a1a";
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size/2.2, 0, Math.PI*2);
-        ctx.fillStyle = "#2d2d2d";
-        ctx.fill();
-        
-        // Draw fuse
-        ctx.beginPath();
-        ctx.moveTo(this.size*0.3, -this.size*0.45);
-        ctx.lineTo(this.size*0.5, -this.size*0.7);
-        ctx.lineTo(this.size*0.2, -this.size*0.6);
-        ctx.fillStyle = "#8B4513";
-        ctx.fill();
-        
-        // Draw skull and crossbones
-        ctx.font = `${Math.floor(this.size * 0.5)}px Arial`;
-        ctx.fillStyle = "#ff0000";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText("💀", 0, 0);
-        
-        ctx.restore();
-    }
-}
-
-class Particle{
-
-    constructor(x,y){
-
-        this.x=x;
-        this.y=y;
-
-        this.vx=(Math.random()-0.5)*10;
-        this.vy=(Math.random()-0.5)*10;
-
-        this.life=35;
-
-        this.size=Math.random()*7+2;
-    }
-
-    update(){
-
-        this.x+=this.vx;
-        this.y+=this.vy;
-
-        this.life--;
-    }
-
-    draw(){
-
-        ctx.beginPath();
-        ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
-        ctx.fillStyle="#7d9d8c";
-        ctx.fill();
-    }
-}
-
-function spawnFruit(){
-
-    if(uploaded.length===0) return;
-    if(!gameRunning) return;
-
-    const img =
-        uploaded[
-            Math.floor(Math.random()*uploaded.length)
-        ];
-
-    fruits.push(new Fruit(img));
-}
-
-function spawnBomb(){
-    if(!gameRunning) return;
-    bombs.push(new Bomb());
-}
-
-setInterval(spawnFruit,900);
-setInterval(spawnBomb, 2000);
-
-function slice(x,y){
-    if(!gameRunning) return;
-    
-    // Check bombs first - instant game over if bomb is cut
-    for(let i=bombs.length-1;i>=0;i--){
-        const b = bombs[i];
-        const cx = b.x + b.size/2;
-        const cy = b.y + b.size/2;
-        const dx = x - cx;
-        const dy = y - cy;
-        const distance = Math.sqrt(dx*dx + dy*dy);
-        
-        if(distance < b.size/2){
-            // GAME OVER - bomb was cut
-            gameRunning = false;
-            document.getElementById("gameover").style.display = "block";
-            
-            // Create explosion particles
-            for(let p=0;p<50;p++){
-                particles.push(new Particle(cx,cy));
-            }
-            
-            // Clear all fruits and bombs
-            fruits.length = 0;
-            bombs.length = 0;
-            return;
-        }
-    }
-    
-    // Check fruits for scoring
-    for(let i=fruits.length-1;i>=0;i--){
-
-        const f = fruits[i];
-
-        const cx = f.x + f.size/2;
-        const cy = f.y + f.size/2;
-
-        const dx = x - cx;
-        const dy = y - cy;
-
-        const distance = Math.sqrt(dx*dx + dy*dy);
-
-        if(distance < 60){
-
-            if(navigator.vibrate){
-                navigator.vibrate(25);
-            }
-
-            for(let p=0;p<25;p++){
-                particles.push(
-                    new Particle(cx,cy)
-                );
-            }
-
-            score++;
-
-            document.getElementById("score").innerText =
-            "Score: " + score;
-
-            fruits.splice(i,1);
-        }
-    }
-}
-
-function move(x,y){
-
-    trail.push({x,y});
-
-    if(trail.length>20){
-        trail.shift();
-    }
-
-    slice(x,y);
-}
-
-canvas.addEventListener("mousemove",e=>{
-    move(e.clientX,e.clientY);
-});
-
-canvas.addEventListener("touchmove",e=>{
-
-    e.preventDefault();
-
-    const t=e.touches[0];
-
-    move(t.clientX,t.clientY);
-
-},{passive:false});
-
-function drawTrail(){
-
-    if(trail.length<2) return;
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        trail[0].x,
-        trail[0].y
-    );
-
-    for(const p of trail){
-
-        ctx.lineTo(
-            p.x,
-            p.y
-        );
-    }
-
-    ctx.strokeStyle="#557c69";
-    ctx.lineWidth=7;
-    ctx.lineCap="round";
-
-    ctx.shadowBlur=20;
-    ctx.shadowColor="#557c69";
-
-    ctx.stroke();
-
-    ctx.shadowBlur=0;
-}
-
-function animate(){
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-    
-    // Draw and update bombs
-    for(let i=bombs.length-1;i>=0;i--){
-        bombs[i].update();
-        bombs[i].draw();
-        
-        if(bombs[i].y > canvas.height+250){
-            bombs.splice(i,1);
-        }
-    }
-
-    for(let i=fruits.length-1;i>=0;i--){
-
-        fruits[i].update();
-        fruits[i].draw();
-
-        if(fruits[i].y > canvas.height+250){
-            fruits.splice(i,1);
-        }
-    }
-
-    for(let i=particles.length-1;i>=0;i--){
-
-        particles[i].update();
-        particles[i].draw();
-
-        if(particles[i].life<=0){
-            particles.splice(i,1);
-        }
-    }
-
-    drawTrail();
-
-    requestAnimationFrame(animate);
-}
-
-animate();
 
 </script>
+
 </body>
 </html>
