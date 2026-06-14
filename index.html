@@ -1,240 +1,570 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Arl Note - Bold & Underline + Image X Marker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<title>Arl Note </title>
+        :root {
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #111827;
+            --toolbar-bg: #ffffff;
+            --border-light: #e5e7eb;
+            --btn-hover: #e5e7eb;
+        }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        .dark {
+            --bg: #111827;
+            --card: #1f2937;
+            --text: #f9fafb;
+            --toolbar-bg: #1f2937;
+            --border-light: #374151;
+            --btn-hover: #374151;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Poppins', sans-serif;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background 0.2s;
+        }
 
-<style>
-:root{
-    --bg:#f3f4f6;
-    --card:#ffffff;
-    --text:#111827;
-}
+        .toolbar {
+            width: 100%;
+            max-width: 580px;
+            background: var(--toolbar-bg);
+            padding: 12px 16px;
+            border-radius: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-light);
+            justify-content: center;
+            align-items: center;
+        }
 
-.dark{
-    --bg:#111827;
-    --card:#1f2937;
-    --text:#f9fafb;
-}
+        .toolbar button,
+        .toolbar select,
+        .toolbar input[type="color"] {
+            border: none;
+            border-radius: 40px;
+            padding: 8px 14px;
+            cursor: pointer;
+            background: var(--bg);
+            color: var(--text);
+            font-weight: 500;
+            font-size: 14px;
+            transition: 0.1s;
+            font-family: inherit;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
+        .toolbar button:hover {
+            background: var(--btn-hover);
+            transform: scale(0.96);
+        }
 
-body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:Poppins,sans-serif;
-    padding:15px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    transition:.3s;
-}
+        .toolbar .active-style {
+            background: #007aff20;
+            border: 1px solid #007aff;
+            color: #007aff;
+        }
 
-.toolbar{
-    width:100%;
-    max-width:450px;
-    background:var(--card);
-    padding:12px;
-    border-radius:16px;
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:15px;
-    box-shadow:0 4px 15px rgba(0,0,0,.1);
-}
+        .saveBtn {
+            background: #007aff !important;
+            color: white !important;
+        }
 
-.toolbar button,
-.toolbar select,
-.toolbar input[type="color"]{
-    border:none;
-    border-radius:10px;
-    padding:10px;
-    cursor:pointer;
-    background:#f3f4f6;
-}
+        #note {
+            width: 100%;
+            max-width: 560px;
+            min-height: 480px;
+            background: var(--card);
+            color: var(--text);
+            border-radius: 32px;
+            padding: 28px 32px;
+            outline: none;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2);
+            line-height: 1.65;
+            font-size: 18px;
+            transition: all 0.2s;
+            overflow-wrap: break-word;
+            font-family: 'Poppins', sans-serif;
+        }
 
-.saveBtn{
-    background:#007aff !important;
-    color:white;
-}
+        /* IMAGE WRAPPER STYLES: no extra space & X overlay */
+        .image-wrapper {
+            position: relative;
+            display: block;
+            width: 100%;
+            margin: 12px 0 0 0;
+            line-height: 0;
+            font-size: 0;
+            vertical-align: top;
+        }
 
-#note{
-    width:100%;
-    max-width:450px;
-    min-height:400px;
-    background:var(--card);
-    color:var(--text);
-    border-radius:20px;
-    padding:25px;
-    outline:none;
-    box-shadow:0 10px 30px rgba(0,0,0,.1);
-    line-height:1.7;
-    font-size:18px;
-    overflow-wrap:break-word;
-}
+        .image-wrapper img {
+            width: 100%;
+            display: block;
+            border-radius: 0px;
+            border: 1px solid rgba(0,0,0,0.05);
+            background: var(--card);
+            object-fit: cover;
+        }
 
-#note img{
-    width:100%;
-    margin-top:10px;
-    display:block;
-}
+        .x-mark {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 34px;
+            height: 34px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 22px;
+            font-family: system-ui, 'Segoe UI', monospace;
+            color: white;
+            cursor: default;
+            pointer-events: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 5;
+        }
 
-.status{
-    margin-top:10px;
-    font-size:12px;
-    opacity:.7;
-}
-</style>
+        /* remove extra spacing */
+        #note p, #note div, #note h1, #note h2, #note h3 {
+            line-height: 1.5;
+        }
+
+        .status {
+            margin-top: 14px;
+            font-size: 12px;
+            opacity: 0.7;
+            font-weight: 500;
+            background: var(--card);
+            padding: 5px 16px;
+            border-radius: 50px;
+            display: inline-block;
+        }
+
+        [contenteditable="true"]:focus {
+            outline: none;
+        }
+
+        hr {
+            margin: 6px 0;
+            border-color: var(--border-light);
+        }
+        .separator {
+            width: 1px;
+            height: 28px;
+            background: var(--border-light);
+            margin: 0 4px;
+        }
+    </style>
 </head>
 <body>
 
 <div class="toolbar">
+    <select id="fontPicker">
+        <option value="Poppins">Poppins</option>
+        <option value="Arial">Arial</option>
+        <option value="Roboto">Roboto</option>
+        <option value="Playfair Display">Playfair Display</option>
+        <option value="Times New Roman">Times New Roman</option>
+    </select>
 
-<select id="fontPicker">
-    <option value="Poppins">Poppins</option>
-    <option value="Arial">Arial</option>
-    <option value="Roboto">Roboto</option>
-    <option value="Playfair Display">Playfair Display</option>
-    <option value="Times New Roman">Times New Roman</option>
-</select>
+    <select id="fontSize">
+        <option value="14">14px</option>
+        <option value="16">16px</option>
+        <option value="18" selected>18px</option>
+        <option value="20">20px</option>
+        <option value="24">24px</option>
+        <option value="28">28px</option>
+        <option value="32">32px</option>
+        <option value="40">40px</option>
+    </select>
 
-<select id="fontSize">
-    <option value="14">14px</option>
-    <option value="16">16px</option>
-    <option value="18" selected>18px</option>
-    <option value="20">20px</option>
-    <option value="24">24px</option>
-    <option value="28">28px</option>
-    <option value="32">32px</option>
-    <option value="40">40px</option>
-</select>
-
-<input type="color" id="fontColor" value="#111827" title="Text Color">
-
-<input type="color" id="highlightColor" value="#fff59d" title="Highlight Color">
-
-<button onclick="highlightText()">🖍️</button>
-
-<button onclick="toggleDark()">🌓</button>
-
-<button onclick="document.getElementById('imgInput').click()">📷</button>
-
-<button class="saveBtn" onclick="saveImage()">Save HD</button>
-
+    <input type="color" id="fontColor" value="#111827" title="Text Color">
+    <input type="color" id="highlightColor" value="#fff59d" title="Highlight Color">
+    
+    <button onclick="formatBold()" id="boldBtn" title="Bold (Ctrl+B)">𝐁</button>
+    <button onclick="formatUnderline()" id="underlineBtn" title="Underline (Ctrl+U)">𝐔</button>
+    <button onclick="highlightText()" title="Highlight selected text">🖍️</button>
+    
+    <div class="separator"></div>
+    <button onclick="toggleDark()" title="Dark/Light mode">🌓</button>
+    <button onclick="document.getElementById('imgInput').click()" title="Insert image + X mark">📷</button>
+    <button class="saveBtn" onclick="saveImage()" title="Capture as PNG (no extra spacing)">Save HD</button>
 </div>
 
 <div id="note" contenteditable="true">
-<h2>My Note</h2>
-<p>Start typing here...</p>
+
+    <p>select any text and use <strong>Bold</strong> or <u>Underline</u> buttons. Upload an image → it gets an <strong style="background:#ffeb3b40;">"X" on top‑right corner</strong>. Saving removes extra bottom spacing perfectly.</p>
+    <p><em>Try formatting: <b>bold text</b> and <u>underlined</u> works great!</em></p>
 </div>
 
-<div class="status" id="status">Saved</div>
-
+<div class="status" id="status">✅ Ready</div>
 <input type="file" id="imgInput" hidden accept="image/*">
 
 <script>
+    (function() {
+        const note = document.getElementById("note");
+        const statusDiv = document.getElementById("status");
+        const fontPicker = document.getElementById("fontPicker");
+        const fontSizeSelect = document.getElementById("fontSize");
+        const fontColorPicker = document.getElementById("fontColor");
+        const highlightColorPicker = document.getElementById("highlightColor");
+        const imgInput = document.getElementById("imgInput");
+        const boldBtn = document.getElementById("boldBtn");
+        const underlineBtn = document.getElementById("underlineBtn");
 
-const note = document.getElementById("note");
-const statusText = document.getElementById("status");
+        // helper: status with timeout
+        function setStatus(msg, isError = false) {
+            statusDiv.textContent = msg;
+            statusDiv.style.opacity = "1";
+            setTimeout(() => {
+                if (statusDiv.textContent === msg) statusDiv.style.opacity = "0.7";
+            }, 1800);
+        }
 
-loadNote();
+        // Save/Load content
+        function saveNoteToLocal() {
+            localStorage.setItem("arlNote", note.innerHTML);
+        }
 
-function saveCurrentNote(){
-    localStorage.setItem("arlNote", note.innerHTML);
-    statusText.textContent = "Saved";
-}
+        function loadNoteFromLocal() {
+            const saved = localStorage.getItem("arlNote");
+            if (saved && saved.trim() !== "") {
+                note.innerHTML = saved;
+                upgradeAllImagesToXWrapper();
+            } else {
+                upgradeAllImagesToXWrapper();
+            }
+            updateStyleButtonsState();
+        }
 
-document.getElementById("fontPicker").addEventListener("change", e=>{
-    note.style.fontFamily = e.target.value;
-});
+        // ========== IMAGE X MARKER LOGIC (no extra spacing) ==========
+        function createXElement() {
+            const xDiv = document.createElement('div');
+            xDiv.className = 'x-mark';
+            xDiv.textContent = '✕';
+            xDiv.setAttribute('aria-label', 'marked image');
+            xDiv.style.position = 'absolute';
+            xDiv.style.top = '10px';
+            xDiv.style.right = '12px';
+            xDiv.style.width = '32px';
+            xDiv.style.height = '32px';
+            xDiv.style.backgroundColor = 'rgba(0,0,0,0.75)';
+            xDiv.style.backdropFilter = 'blur(5px)';
+            xDiv.style.borderRadius = '30px';
+            xDiv.style.display = 'flex';
+            xDiv.style.alignItems = 'center';
+            xDiv.style.justifyContent = 'center';
+            xDiv.style.fontWeight = 'bold';
+            xDiv.style.fontSize = '20px';
+            xDiv.style.fontFamily = 'system-ui, "Segoe UI", monospace';
+            xDiv.style.color = 'white';
+            xDiv.style.pointerEvents = 'none';
+            xDiv.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+            xDiv.style.border = '1px solid rgba(255,255,255,0.35)';
+            xDiv.style.userSelect = 'none';
+            return xDiv;
+        }
 
-document.getElementById("fontSize").addEventListener("change", e=>{
-    note.style.fontSize = e.target.value + "px";
-});
+        function upgradeAllImagesToXWrapper() {
+            const images = note.querySelectorAll('img');
+            let modified = false;
+            images.forEach(img => {
+                if (img.parentElement && img.parentElement.classList && img.parentElement.classList.contains('image-wrapper')) {
+                    let wrapper = img.parentElement;
+                    if (!wrapper.querySelector('.x-mark')) {
+                        wrapper.appendChild(createXElement());
+                        modified = true;
+                    }
+                    wrapper.style.lineHeight = '0';
+                    wrapper.style.fontSize = '0';
+                    wrapper.style.display = 'block';
+                    return;
+                }
+                const wrapper = document.createElement('div');
+                wrapper.className = 'image-wrapper';
+                wrapper.style.position = 'relative';
+                wrapper.style.display = 'block';
+                wrapper.style.width = '100%';
+                wrapper.style.lineHeight = '0';
+                wrapper.style.fontSize = '0';
+                wrapper.style.marginTop = '12px';
+                wrapper.style.marginBottom = '0px';
+                const xMark = createXElement();
+                const parent = img.parentNode;
+                wrapper.appendChild(img.cloneNode(true));
+                wrapper.appendChild(xMark);
+                if (parent) parent.replaceChild(wrapper, img);
+                modified = true;
+            });
+            if (modified) {
+                sanitizeExtraGaps();
+                saveNoteToLocal();
+            }
+        }
 
-document.getElementById("fontColor").addEventListener("change", e=>{
-    document.execCommand("foreColor", false, e.target.value);
-    saveCurrentNote();
-});
+        function sanitizeExtraGaps() {
+            const walker = document.createTreeWalker(note, NodeFilter.SHOW_TEXT, null, false);
+            const toRemove = [];
+            while(walker.nextNode()) {
+                const node = walker.currentNode;
+                if (node.textContent.trim() === '' && node.parentElement) {
+                    const prev = node.previousSibling;
+                    if (prev && prev.nodeType === Node.ELEMENT_NODE && prev.classList && prev.classList.contains('image-wrapper')) {
+                        toRemove.push(node);
+                    } else if (node.parentElement === note && node.textContent.trim() === '') {
+                        toRemove.push(node);
+                    }
+                }
+            }
+            toRemove.forEach(node => node.remove());
+            const wrappers = note.querySelectorAll('.image-wrapper');
+            wrappers.forEach(w => w.style.marginBottom = "0px");
+        }
 
-function highlightText(){
-    const color =
-        document.getElementById("highlightColor").value;
+        function insertImageWithX(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                setStatus("❌ Please select an image", true);
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const imgElement = document.createElement('img');
+                imgElement.src = evt.target.result;
+                imgElement.style.maxWidth = '100%';
+                imgElement.style.display = 'block';
+                imgElement.style.borderRadius = '18px';
+                const wrapper = document.createElement('div');
+                wrapper.className = 'image-wrapper';
+                wrapper.style.position = 'relative';
+                wrapper.style.display = 'block';
+                wrapper.style.width = '100%';
+                wrapper.style.lineHeight = '0';
+                wrapper.style.fontSize = '0';
+                wrapper.style.marginTop = '14px';
+                wrapper.style.marginBottom = '0px';
+                const xMark = createXElement();
+                wrapper.appendChild(imgElement);
+                wrapper.appendChild(xMark);
+                const selection = window.getSelection();
+                if (selection && selection.rangeCount > 0) {
+                    const range = selection.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(wrapper);
+                    range.setStartAfter(wrapper);
+                    range.setEndAfter(wrapper);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                } else {
+                    note.appendChild(wrapper);
+                }
+                sanitizeExtraGaps();
+                saveNoteToLocal();
+                setStatus("✅ Image + X marker (top-right)");
+            };
+            reader.readAsDataURL(file);
+        }
 
-    document.execCommand("hiliteColor", false, color);
-
-    saveCurrentNote();
-}
-
-function toggleDark(){
-    document.body.classList.toggle("dark");
-}
-
-note.addEventListener("input", saveCurrentNote);
-
-function loadNote(){
-
-    const saved = localStorage.getItem("arlNote");
-
-    if(saved){
-        note.innerHTML = saved;
-    }
-}
-
-document.getElementById("imgInput").addEventListener("change", function(e){
-
-    const file = e.target.files[0];
-
-    if(!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = function(event){
-
-        const img = document.createElement("img");
-
-        img.src = event.target.result;
-
-        note.appendChild(img);
-
-        saveCurrentNote();
-    };
-
-    reader.readAsDataURL(file);
-});
-
-async function saveImage(){
-
-    statusText.textContent = "Generating HD image...";
-
-    const canvas = await html2canvas(note,{
-        scale:5,
-        useCORS:true,
-        backgroundColor:null
-    });
-
-    const link = document.createElement("a");
-
-    link.download = "Arl-Note-HD.png";
-
-    link.href = canvas.toDataURL("image/png",1.0);
-
-    link.click();
-
-    statusText.textContent = "Saved HD image";
-}
-
+        // ========== BOLD & UNDERLINE functions ==========
+        window.formatBold = function() {
+            document.execCommand('bold', false, null);
+            saveNoteToLocal();
+            updateStyleButtonsState();
+            setStatus("Bold toggled");
+        };
+        
+        window.formatUnderline = function() {
+            document.execCommand('underline', false, null);
+            saveNoteToLocal();
+            updateStyleButtonsState();
+            setStatus("Underline toggled");
+        };
+        
+        window.highlightText = function() {
+            const color = highlightColorPicker.value;
+            document.execCommand('hiliteColor', false, color);
+            saveNoteToLocal();
+            setStatus("Highlight applied");
+        };
+        
+        function updateStyleButtonsState() {
+            // check current selection style and add visual feedback
+            setTimeout(() => {
+                const isBold = document.queryCommandState('bold');
+                const isUnderline = document.queryCommandState('underline');
+                if (boldBtn) {
+                    if (isBold) boldBtn.classList.add('active-style');
+                    else boldBtn.classList.remove('active-style');
+                }
+                if (underlineBtn) {
+                    if (isUnderline) underlineBtn.classList.add('active-style');
+                    else underlineBtn.classList.remove('active-style');
+                }
+            }, 10);
+        }
+        
+        // ========== Text styling events ==========
+        function applyFontFamily() { note.style.fontFamily = fontPicker.value; saveNoteToLocal(); }
+        function applyFontSize() { note.style.fontSize = fontSizeSelect.value + "px"; saveNoteToLocal(); }
+        
+        fontPicker.addEventListener("change", applyFontFamily);
+        fontSizeSelect.addEventListener("change", applyFontSize);
+        fontColorPicker.addEventListener("change", (e) => {
+            document.execCommand("foreColor", false, e.target.value);
+            saveNoteToLocal();
+        });
+        
+        window.toggleDark = function() {
+            document.body.classList.toggle("dark");
+            localStorage.setItem("arlTheme", document.body.classList.contains("dark") ? "dark" : "light");
+        };
+        
+        if (localStorage.getItem("arlTheme") === "dark") document.body.classList.add("dark");
+        
+        // Save on input and selection change to keep button states
+        note.addEventListener("input", () => {
+            upgradeAllImagesToXWrapper();
+            sanitizeExtraGaps();
+            saveNoteToLocal();
+        });
+        note.addEventListener("mouseup", updateStyleButtonsState);
+        note.addEventListener("keyup", updateStyleButtonsState);
+        note.addEventListener("blur", () => {
+            upgradeAllImagesToXWrapper();
+            sanitizeExtraGaps();
+            saveNoteToLocal();
+        });
+        
+        // observer for images
+        const observer = new MutationObserver(() => {
+            upgradeAllImagesToXWrapper();
+            sanitizeExtraGaps();
+            saveNoteToLocal();
+            updateStyleButtonsState();
+        });
+        observer.observe(note, { childList: true, subtree: true });
+        
+        // file upload handler
+        imgInput.addEventListener("change", (e) => {
+            if (e.target.files[0]) insertImageWithX(e.target.files[0]);
+            imgInput.value = '';
+        });
+        
+        // handle paste images
+        note.addEventListener('paste', (event) => {
+            const items = (event.clipboardData || window.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    if (blob) {
+                        event.preventDefault();
+                        insertImageWithX(blob);
+                        return;
+                    }
+                }
+            }
+            setTimeout(() => {
+                upgradeAllImagesToXWrapper();
+                sanitizeExtraGaps();
+                saveNoteToLocal();
+                updateStyleButtonsState();
+            }, 30);
+        });
+        
+        // ========== SAVE HD: NO EXTRA SPACE ==========
+        window.saveImage = async function() {
+            setStatus("📸 Generating HD capture...");
+            try {
+                upgradeAllImagesToXWrapper();
+                sanitizeExtraGaps();
+                note.style.paddingBottom = "0px";
+                const wrappers = note.querySelectorAll('.image-wrapper');
+                wrappers.forEach(w => w.style.marginBottom = "0px");
+                const bgColor = getComputedStyle(document.body).backgroundColor;
+                const canvasBg = (bgColor === "rgb(17, 24, 39)" || document.body.classList.contains('dark')) ? "#1f2937" : "#ffffff";
+                const canvas = await html2canvas(note, {
+                    scale: 3.2,
+                    useCORS: true,
+                    backgroundColor: canvasBg,
+                    logging: false,
+                    windowWidth: note.scrollWidth,
+                    windowHeight: note.scrollHeight
+                });
+                const link = document.createElement("a");
+                link.download = "Arl-Note-HD.png";
+                link.href = canvas.toDataURL("image/png", 1.0);
+                link.click();
+                setStatus("✨ HD saved! No extra spacing.");
+            } catch(err) {
+                console.error(err);
+                setStatus("❌ Capture failed", true);
+            }
+        };
+        
+        // load note & styles
+        loadNoteFromLocal();
+        const savedFont = localStorage.getItem("arlFontFamily");
+        if (savedFont) note.style.fontFamily = savedFont;
+        const savedSize = localStorage.getItem("arlFontSize");
+        if (savedSize) note.style.fontSize = savedSize;
+        fontPicker.value = note.style.fontFamily || "Poppins";
+        fontSizeSelect.value = parseInt(note.style.fontSize) || 18;
+        
+        function storeStyles() {
+            localStorage.setItem("arlFontFamily", note.style.fontFamily);
+            localStorage.setItem("arlFontSize", note.style.fontSize);
+        }
+        note.addEventListener("input", storeStyles);
+        fontPicker.addEventListener("change", () => {
+            note.style.fontFamily = fontPicker.value;
+            storeStyles();
+        });
+        fontSizeSelect.addEventListener("change", () => {
+            note.style.fontSize = fontSizeSelect.value + "px";
+            storeStyles();
+        });
+        
+        // keyboard shortcuts: Ctrl+B / Ctrl+U
+        note.addEventListener("keydown", (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'b' || e.key === 'B') {
+                    e.preventDefault();
+                    formatBold();
+                } else if (e.key === 'u' || e.key === 'U') {
+                    e.preventDefault();
+                    formatUnderline();
+                }
+            }
+        });
+        
+        updateStyleButtonsState();
+        setStatus("✅ Bold & Underline ready");
+    })();
 </script>
-
 </body>
 </html>
