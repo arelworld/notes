@@ -3,222 +3,115 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Arl Note Pro HD</title>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
-
 <style>
-:root{
-    --bg:#f3f4f6;
-    --card:#ffffff;
-    --text:#111827;
-}
+:root{ --bg:#f3f4f6; --card:#ffffff; --text:#111827; }
+.dark{ --bg:#111827; --card:#1f2937; --text:#f9fafb; }
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{ background:var(--bg); color:var(--text); font-family:Poppins,sans-serif; padding:15px; display:flex; flex-direction:column; align-items:center; transition:.3s; }
 
-.dark{
-    --bg:#111827;
-    --card:#1f2937;
-    --text:#f9fafb;
-}
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
-body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:Poppins,sans-serif;
-    padding:15px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    transition:.3s;
-}
-
-.toolbar{
-    width:100%;
-    max-width:450px;
-    background:var(--card);
-    padding:12px;
-    border-radius:16px;
-    display:flex;
-    flex-wrap:wrap;
-    gap:8px;
-    margin-bottom:15px;
-    box-shadow:0 4px 15px rgba(0,0,0,.1);
-}
-
-.toolbar button,
-.toolbar select,
-.toolbar input[type="color"]{
-    border:none;
-    border-radius:10px;
-    padding:10px;
-    cursor:pointer;
-}
-
-.saveBtn{
-    background:#007aff;
-    color:white;
-}
+.toolbar{ width:100%; max-width:450px; background:var(--card); padding:12px; display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px; box-shadow:0 4px 15px rgba(0,0,0,.1); }
+.toolbar button, .toolbar select, .toolbar input[type="color"]{ border:none; padding:10px; cursor:pointer; font-weight:bold; }
+.saveBtn{ background:#007aff; color:white; }
 
 #note{
-    width:100%;
-    max-width:450px;
-    min-height:400px;
-    background:var(--card);
-    color:var(--text);
-    border-radius:20px;
-    padding:25px;
-    outline:none;
-    box-shadow:0 10px 30px rgba(0,0,0,.1);
-    line-height:1.7;
-    font-size:18px;
-    overflow-wrap:break-word;
+    width:100%; max-width:450px; min-height:400px; background:var(--card); color:var(--text);
+    border-radius:0; /* Removed border-radius */
+    padding:25px; outline:none; box-shadow:0 10px 30px rgba(0,0,0,.1);
+    line-height:1.7; font-size:18px; overflow-wrap:break-word;
 }
-
-#note img{
-    width:100%;
-    margin-top:10px;
-    display:block;
-}
-
-.status{
-    margin-top:10px;
-    font-size:12px;
-    opacity:.7;
-}
+#note img{ width:100%; margin-top:10px; display:block; }
+.status{ margin-top:10px; font-size:12px; opacity:.7; }
 </style>
 </head>
 <body>
 
 <div class="toolbar">
-
-<select id="fontPicker">
-    <option value="Poppins">Poppins</option>
-    <option value="Arial">Arial</option>
-    <option value="Roboto">Roboto</option>
-    <option value="Playfair Display">Playfair Display</option>
-    <option value="Times New Roman">Times New Roman</option>
-</select>
-
-<select id="fontSize">
-    <option value="14">14px</option>
-    <option value="16">16px</option>
-    <option value="18" selected>18px</option>
-    <option value="20">20px</option>
-    <option value="24">24px</option>
-    <option value="28">28px</option>
-    <option value="32">32px</option>
-    <option value="40">40px</option>
-</select>
-
-<input type="color" id="fontColor" value="#111827">
-
-<button onclick="toggleDark()">🌓</button>
-
-<button onclick="document.getElementById('imgInput').click()">📷</button>
-
-<button class="saveBtn" onclick="saveImage()">Save HD</button>
-
+    <button onclick="format('bold')"><b>B</b></button>
+    <button onclick="format('underline')"><u>U</u></button>
+    <select id="fontPicker">
+        <option value="Poppins">Poppins</option>
+        <option value="Arial">Arial</option>
+        <option value="Roboto">Roboto</option>
+        <option value="Playfair Display">Playfair Display</option>
+    </select>
+    <select id="fontSize">
+        <option value="16">16px</option>
+        <option value="18" selected>18px</option>
+        <option value="24">24px</option>
+    </select>
+    <input type="color" id="fontColor" value="#111827">
+    <button onclick="toggleDark()">🌓</button>
+    <button onclick="document.getElementById('imgInput').click()">📷</button>
+    <button class="saveBtn" onclick="saveImage()">Save HD</button>
 </div>
 
 <div id="note" contenteditable="true">
-<h2>My Note</h2>
-<p>Start typing here...</p>
+    <h2>My Note</h2>
+    <p>Start typing here...</p>
 </div>
 
 <div class="status" id="status">Saved</div>
-
 <input type="file" id="imgInput" hidden accept="image/*">
 
 <script>
-
 const note = document.getElementById("note");
 const statusText = document.getElementById("status");
 
-loadNote();
+// Formatting function
+function format(cmd) { document.execCommand(cmd, false, null); }
 
-document.getElementById("fontPicker").addEventListener("change", e=>{
-    note.style.fontFamily = e.target.value;
-});
+document.getElementById("fontPicker").addEventListener("change", e => note.style.fontFamily = e.target.value);
+document.getElementById("fontSize").addEventListener("change", e => note.style.fontSize = e.target.value + "px");
+document.getElementById("fontColor").addEventListener("change", e => note.style.color = e.target.value);
 
-document.getElementById("fontSize").addEventListener("change", e=>{
-    note.style.fontSize = e.target.value + "px";
-});
+function toggleDark(){ document.body.classList.toggle("dark"); }
 
-document.getElementById("fontColor").addEventListener("change", e=>{
-    note.style.color = e.target.value;
-});
-
-function toggleDark(){
-    document.body.classList.toggle("dark");
-}
-
-note.addEventListener("input", ()=>{
+note.addEventListener("input", () => {
     localStorage.setItem("arlNote", note.innerHTML);
-
     statusText.textContent = "Saved";
 });
 
 function loadNote(){
-
     const saved = localStorage.getItem("arlNote");
-
-    if(saved){
-        note.innerHTML = saved;
-    }
+    if(saved) note.innerHTML = saved;
 }
+loadNote();
 
 document.getElementById("imgInput").addEventListener("change", function(e){
-
     const file = e.target.files[0];
-
     if(!file) return;
-
     const reader = new FileReader();
-
     reader.onload = function(event){
-
         const img = document.createElement("img");
-
         img.src = event.target.result;
-
         note.appendChild(img);
-
-        localStorage.setItem("arlNote", note.innerHTML);
     };
-
     reader.readAsDataURL(file);
 });
 
 async function saveImage(){
-
     statusText.textContent = "Generating HD image...";
-
-    const canvas = await html2canvas(note,{
-        scale:5,
-        useCORS:true,
-        backgroundColor:null
+    
+    // To remove whitespace, we ensure the canvas scale is applied
+    // and the capture reflects the current element dimensions
+    const canvas = await html2canvas(note, {
+        scale: 5,
+        useCORS: true,
+        backgroundColor: null,
+        logging: false,
+        width: note.offsetWidth,
+        height: note.offsetHeight
     });
 
     const link = document.createElement("a");
-
     link.download = "Arl-Note-HD.png";
-
-    link.href = canvas.toDataURL("image/png",1.0);
-
+    link.href = canvas.toDataURL("image/png", 1.0);
     link.click();
-
     statusText.textContent = "Saved HD image";
 }
-
 </script>
-
 </body>
 </html>
